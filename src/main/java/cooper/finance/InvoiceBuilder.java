@@ -13,7 +13,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.net.URL;
+import java.net.URI;
 import java.net.HttpURLConnection;
+import java.net.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.nio.charset.Charset;
+
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.client.methods.HttpPost;
 
 class InvoiceBuilder {
     private JSONObject requestTemplate;
@@ -76,7 +89,7 @@ class InvoiceBuilder {
         invoiceEntry = invoiceEntry.replace("% {Quantity}",quantity);
         invoiceEntry = invoiceEntry.replace("% {Discount}",discount);
         invoiceEntry = invoiceEntry.replace("% {Payment Due}",paymentDue);
-        System.out.println(invoiceEntry);
+        // System.out.println(invoiceEntry);
         invoiceEntries.add(invoiceEntry);
     }
 
@@ -91,15 +104,66 @@ class InvoiceBuilder {
         writeContentToJson(jsonRequest, invoiceCompiled);
 
         // curl -X POST -H 'Content-Type: application/json' -d @data.json http://47.241.250.203:3013/project/1/compile
+        // curl -v -L -X POST -o document.pdf -F return=pdf -F engine=pdflatex -F 'filecontents[]=' -F 'filename[]=document.tex' 'https://texlive.net/cgi-bin/latexcgi'
+
+
         try {
-            URL url = new URL ("http://47.241.250.203:3013/project/1/compile");
+            // System.out.println(invoiceCompiled);
+            /*
+            InputStream is = MultipartEntityBuilder.create()
+                .addTextBody("return", "pdf", ContentType.MULTIPART_FORM_DATA)
+                .addTextBody("engine", "pdflatex", ContentType.MULTIPART_FORM_DATA)
+                .addTextBody("filecontents[]", invoiceCompiled, ContentType.MULTIPART_FORM_DATA)
+                .addTextBody("filename[]","document.tex", ContentType.MULTIPART_FORM_DATA)
+                .build();
+                .getContent();
+                */
+             HttpEntity multipart = MultipartEntityBuilder.create()
+                .addTextBody("return", "pdf", ContentType.MULTIPART_FORM_DATA)
+                .addTextBody("engine", "pdflatex", ContentType.MULTIPART_FORM_DATA)
+                .addTextBody("filecontents[]", invoiceCompiled, ContentType.MULTIPART_FORM_DATA)
+                .addTextBody("filename[]","document.tex", ContentType.MULTIPART_FORM_DATA)
+                //.setLaxMode()
+                // .setStrictMode()
+                .setMode(HttpMultipartMode.RFC6532)
+                .build();
+
+
+            InputStream is = multipart.getContent();
+            StringBuilder sb = new StringBuilder();
+            for (int ch; (ch = is.read()) != -1; ) {
+                sb.append((char) ch);
+            }
+            System.out.println(sb);
+
+            /*
+            URL url = new URL("https://texlive.net/cgi-bin/latexcgi");
             HttpURLConnection con = (HttpURLConnection)url.openConnection();
             con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("Accept", "application/json");
+            con.setRequestProperty("Content-Type", "multipart/form-data");
+            // con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
+            */
 
-            byte[] input = jsonRequest.toString().getBytes("utf-8");
+            URL url = new URL("https://texlive.net/cgi-bin/latexcgi");
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+            HttpPost uploadFile = new HttpPost(new URI(url.toString()));
+            uploadFile.setEntity(multipart);
+            CloseableHttpResponse response = httpClient.execute(uploadFile);
+
+            HttpEntity responseEntity = response.getEntity();
+            is = responseEntity.getContent();
+            sb = new StringBuilder();
+            for (int ch; (ch = is.read()) != -1; ) {
+                sb.append((char) ch);
+            }
+            System.out.println(sb);
+
+            /*
+
+
+            // byte[] input = jsonRequest.toString().getBytes("utf-8");
+            byte[] input = is.readAllBytes();
             OutputStream os = con.getOutputStream(); 
             os.write(input, 0, input.length);			
 
@@ -113,7 +177,9 @@ class InvoiceBuilder {
                     String responseLine = null;
                     while ((responseLine = br.readLine()) != null) {
                         response.append(responseLine.trim());
+                        System.out.println(responseLine);
                     }
+                        System.out.println(responseLine);
                     processPostResponse(response.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -121,6 +187,7 @@ class InvoiceBuilder {
             } else {
                 System.out.println("Error encountered when sending post request! Any fallback plan?");
             }
+            */
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -130,6 +197,7 @@ class InvoiceBuilder {
     // https://www.baeldung.com/java-download-file
     private void processPostResponse(String response) {
 
+        System.out.println(response);
         JSONObject jsonResponse = new JSONObject(response);
         // iterate json structure
         String compileStatus = jsonResponse.getJSONObject("compile")
