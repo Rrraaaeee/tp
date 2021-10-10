@@ -102,6 +102,7 @@ class InvoiceBuilder {
             byte[] input = jsonRequest.toString().getBytes("utf-8");
             OutputStream os = con.getOutputStream(); 
             os.write(input, 0, input.length);			
+
             String reply = con.getResponseMessage();
             int replyCode = con.getResponseCode();
             if (replyCode == 200) {
@@ -126,6 +127,7 @@ class InvoiceBuilder {
     }
 
 
+    // https://www.baeldung.com/java-download-file
     private void processPostResponse(String response) {
 
         JSONObject jsonResponse = new JSONObject(response);
