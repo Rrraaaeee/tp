@@ -7,9 +7,11 @@ import java.util.ArrayList;
  */
 public class FinanceManager {
     private final ArrayList<Integer> balanceSheet;
+    private final InvoiceBuilder invoiceBuilder;
 
     public FinanceManager() {
         balanceSheet = new ArrayList<>();
+        invoiceBuilder = new InvoiceBuilder();
     }
 
     public ArrayList<Integer> getBalanceSheet() {
@@ -27,5 +29,12 @@ public class FinanceManager {
         } else {
             balanceSheet.add(amount * -1);
         }
+    }
+
+    public void createInvoice() {
+        for (Integer entry : balanceSheet) {
+            invoiceBuilder.createInvoiceEntry("general", entry.toString(), "1", "0", entry.toString());
+        }
+        invoiceBuilder.compileInvoice();
     }
 }
