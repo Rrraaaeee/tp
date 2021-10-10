@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
@@ -108,86 +109,57 @@ class InvoiceBuilder {
 
 
         try {
-            // System.out.println(invoiceCompiled);
-            /*
-            InputStream is = MultipartEntityBuilder.create()
-                .addTextBody("return", "pdf", ContentType.MULTIPART_FORM_DATA)
-                .addTextBody("engine", "pdflatex", ContentType.MULTIPART_FORM_DATA)
-                .addTextBody("filecontents[]", invoiceCompiled, ContentType.MULTIPART_FORM_DATA)
-                .addTextBody("filename[]","document.tex", ContentType.MULTIPART_FORM_DATA)
-                .build();
-                .getContent();
-                */
-             HttpEntity multipart = MultipartEntityBuilder.create()
-                .addTextBody("return", "pdf", ContentType.MULTIPART_FORM_DATA)
-                .addTextBody("engine", "pdflatex", ContentType.MULTIPART_FORM_DATA)
-                .addTextBody("filecontents[]", invoiceCompiled, ContentType.MULTIPART_FORM_DATA)
-                .addTextBody("filename[]","document.tex", ContentType.MULTIPART_FORM_DATA)
-                //.setLaxMode()
-                // .setStrictMode()
-                .setMode(HttpMultipartMode.RFC6532)
-                .build();
 
-
-            InputStream is = multipart.getContent();
-            StringBuilder sb = new StringBuilder();
-            for (int ch; (ch = is.read()) != -1; ) {
-                sb.append((char) ch);
-            }
-            System.out.println(sb);
-
-            /*
+            // 1. there is extra 2 -- at every boundary
+            // 2. there is extra 2 -- at last boundary
             URL url = new URL("https://texlive.net/cgi-bin/latexcgi");
             HttpURLConnection con = (HttpURLConnection)url.openConnection();
             con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "multipart/form-data");
+            con.setRequestProperty("Content-Type", "multipart/form-data; boundary=--12345678");
             // con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
-            */
 
-            URL url = new URL("https://texlive.net/cgi-bin/latexcgi");
-            CloseableHttpClient httpClient = HttpClients.createDefault();
-            HttpPost uploadFile = new HttpPost(new URI(url.toString()));
-            uploadFile.setEntity(multipart);
-            CloseableHttpResponse response = httpClient.execute(uploadFile);
-
-            HttpEntity responseEntity = response.getEntity();
-            is = responseEntity.getContent();
-            sb = new StringBuilder();
-            for (int ch; (ch = is.read()) != -1; ) {
-                sb.append((char) ch);
-            }
-            System.out.println(sb);
-
-            /*
-
-
-            // byte[] input = jsonRequest.toString().getBytes("utf-8");
-            byte[] input = is.readAllBytes();
+            String LINE_FEED = "\r\n";
+            byte[] input = ("----12345678"+LINE_FEED
+                            // +"Content-Type: multipart/form-data" + LINE_FEED
+                            +"Content-Disposition: form-data; name=\"filecontents[]\""+LINE_FEED + LINE_FEED
+                            +invoiceCompiled+LINE_FEED
+                            +"----12345678"+LINE_FEED
+                            +"Content-Disposition: form-data; name=\"filename[]\""+LINE_FEED + LINE_FEED
+                            +"document.tex"+LINE_FEED
+                            +"----12345678"+LINE_FEED
+                            +"Content-Disposition: form-data; name=\"engine\""+LINE_FEED + LINE_FEED
+                            +"pdflatex"+LINE_FEED
+                            +"----12345678"+LINE_FEED
+                            +"Content-Disposition: form-data; name=\"return\""+LINE_FEED + LINE_FEED
+                            +"pdf"+LINE_FEED
+                            +"----12345678"+LINE_FEED + "--").getBytes("utf-8");
             OutputStream os = con.getOutputStream(); 
             os.write(input, 0, input.length);			
+
 
             String reply = con.getResponseMessage();
             int replyCode = con.getResponseCode();
             if (replyCode == 200) {
                 // send success
+                byte[] buffer = con.getInputStream().readAllBytes();
+                processPostResponse(buffer);
+                /*
                 try(BufferedReader br = new BufferedReader(
                     new InputStreamReader(con.getInputStream(), "utf-8"))) {
                     StringBuilder response = new StringBuilder();
                     String responseLine = null;
                     while ((responseLine = br.readLine()) != null) {
-                        response.append(responseLine.trim());
-                        System.out.println(responseLine);
+                        response.append(responseLine+"\n");
                     }
-                        System.out.println(responseLine);
                     processPostResponse(response.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                */
             } else {
                 System.out.println("Error encountered when sending post request! Any fallback plan?");
             }
-            */
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -195,8 +167,33 @@ class InvoiceBuilder {
 
 
     // https://www.baeldung.com/java-download-file
-    private void processPostResponse(String response) {
+    private void processPostResponse(byte[] response) {
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(
+                System.getProperty("user.dir") + "/output.pdf");
+            fileOutputStream.write(response);
+            fileOutputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        /*
 
+        try (BufferedInputStream in = new BufferedInputStream(new ByteArrayInputStream(response.getBytes("utf-8")));
+            FileOutputStream fileOutputStream = new FileOutputStream(
+                System.getProperty("user.dir") + "/output.pdf")) {
+            byte dataBuffer[] = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+                fileOutputStream.write(dataBuffer, 0, bytesRead);
+            }
+            fileOutputStream.close();
+        } catch (IOException e) {
+            System.out.println("Error encountered when downloading output from server!");
+            e.printStackTrace();
+        }
+        */
+
+        /*
         System.out.println(response);
         JSONObject jsonResponse = new JSONObject(response);
         // iterate json structure
@@ -225,6 +222,7 @@ class InvoiceBuilder {
             System.out.println("Error encountered when downloading output from server!");
             e.printStackTrace();
         }
+        */
     }
 }
 
