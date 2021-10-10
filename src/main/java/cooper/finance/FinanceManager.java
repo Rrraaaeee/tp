@@ -35,6 +35,6 @@ public class FinanceManager {
         for (Integer entry : balanceSheet) {
             invoiceBuilder.createInvoiceEntry("general", entry.toString(), "1", "0", entry.toString());
         }
-        invoiceBuilder.compileInvoice();
+        invoiceBuilder.compileInvoiceAndSend();
     }
 }
