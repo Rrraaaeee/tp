@@ -70,7 +70,8 @@ public class Storage {
             Scanner sc = new Scanner(storageFile);
             while (sc.hasNextLine()) {
                 String input = sc.nextLine();
-                if (!input.split(" ")[0].equals("register")) { // do not load register instructions
+                if (!input.split(" ")[0].equals("register") &&
+                    !input.split(" ")[0].equals("login") ) { // do not load register instructions
                     Command command = CommandParser.parse(input);
                     command.execute(signInDetails, cooperFinanceManager, cooperMeetingManager);
                 }

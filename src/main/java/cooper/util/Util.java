@@ -1,13 +1,17 @@
 package cooper.util;
 
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 
 public class Util {
@@ -35,6 +39,14 @@ public class Util {
         tmpFileStream.close();
 
         return tmpFile;
+    }
+
+    public static String inputStreamToString(InputStream inputStream) {
+        String contentString = new BufferedReader(
+            new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+            .lines()
+            .collect(Collectors.joining("\n"));
+        return contentString;
     }
 
 
