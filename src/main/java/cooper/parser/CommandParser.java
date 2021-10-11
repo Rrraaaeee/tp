@@ -15,6 +15,7 @@ import com.dopsun.chatbot.cli.Parser;
 import cooper.command.AddCommand;
 import cooper.command.AvailableCommand;
 import cooper.command.Command;
+import cooper.command.CompileCommand;
 import cooper.command.ExitCommand;
 import cooper.command.ListCommand;
 import cooper.command.MeetingsCommand;
@@ -41,8 +42,8 @@ public class CommandParser extends ParserBase {
      */
     private CommandParser()  {
         super();
-
         try {
+            // TODO: Cleanup paths in final strings
             InputStream commandSetInputStream = this.getClass().getResourceAsStream("/parser/command-data.properties");
 
             File commandSetTmpFile = Util.inputStreamToTmpFile(commandSetInputStream,
@@ -102,6 +103,8 @@ public class CommandParser extends ParserBase {
             return new MeetingsCommand();
         case "exit":
             return new ExitCommand();
+        case "compile":
+            return new CompileCommand();
         default:
             throw new UnrecognisedCommandException();
         }

@@ -35,7 +35,6 @@ public class Cooper {
         cooperStorage.loadLoginDetails(cooperVerifier);
         SignInDetails signInDetails = verifyUser();
         cooperStorage.loadResources(signInDetails, cooperFinanceManager, cooperMeetingManager);
-        cooperFinanceManager.createInvoice();
 
         while (true) {
             try {
