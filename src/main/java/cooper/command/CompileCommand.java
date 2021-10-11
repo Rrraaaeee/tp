@@ -21,7 +21,8 @@ public class CompileCommand extends Command {
     }
 
     /**
-     * The override function for executing the 'compile' command, calls for 'compile' and subsequently printing the status
+     * The override function for executing the 'compile' command, calls for 'compile' 
+     * and subsequently printing the status
      * to the command line.
      */
     @Override
