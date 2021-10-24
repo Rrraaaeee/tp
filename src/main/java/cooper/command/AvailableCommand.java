@@ -12,24 +12,22 @@ import cooper.resources.ResourcesManager;
 
 public class AvailableCommand extends Command {
     private final String time;
-    private final String username;
 
-    public AvailableCommand(String time, String username) {
+    public AvailableCommand(String time) {
         super();
         this.time = time;
-        this.username = username;
     }
 
     @Override
-    public void execute(SignInDetails signInDetails, 
-            ResourcesManager resourcesManager) throws InvalidAccessException {
+    public void execute(SignInDetails signInDetails, ResourcesManager resourcesManager) throws InvalidAccessException {
+        String username = signInDetails.getUsername();
         UserRole userRole = signInDetails.getUserRole();
         MeetingManager meetingManager = resourcesManager.getMeetingManager(userRole);
         StorageManager storageManager = resourcesManager.getStorageManager();
         if (meetingManager != null) {
             try {
                 meetingManager.addAvailability(time, username);
-                storageManager.saveMeetings(meetingManager);
+                storageManager.saveAvailability(meetingManager);
                 Ui.printAvailableCommand(time, username);
             } catch (InvalidTimeException e1) {
                 Ui.showInvalidTimeException();

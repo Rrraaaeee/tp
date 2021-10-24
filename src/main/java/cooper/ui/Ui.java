@@ -1,8 +1,10 @@
 package cooper.ui;
 
+import cooper.finance.FinanceManager;
 import cooper.verification.UserRole;
 import cooper.forum.ForumPost;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -32,8 +34,6 @@ public class Ui {
 
     private static final Scanner scanner = new Scanner(System.in);
     private static final PrintStream printStream = System.out;
-
-    private static boolean isOutputSuppressed = false;
 
     private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
@@ -115,12 +115,20 @@ public class Ui {
         show(text);
     }
 
+    public static void showFileWriteError(IOException e) {
+        show(LINE);
+        show("Error writing to file ", false);
+        show(e.getMessage(), true);
+        show(LINE);
+    }
+
     /**
      * Exception message to show file path error.
      **/
-    public static void showInvalidFilePathError() {
+    public static void showFileCreationError(IOException e) {
         show(LINE);
-        show("Parser/StorageManager received invalid input file path!");
+        show("Error creating storage file: ", false);
+        show(e.getMessage(), true);
         show(LINE);
     }
 
@@ -133,10 +141,17 @@ public class Ui {
     /**
      * Exception message to show invalid command error.
      **/
-    public static void showUnrecognisedCommandError() {
+    public static void showUnrecognisedCommandError(boolean isSignIn) {
         show(LINE);
         show("I don't recognise the command you entered.");
-        show("Enter 'help' to view the format of each command.");
+
+        if (isSignIn) {
+            show("To login, enter \"login  [yourUsername] pw [password] as [yourRole]\"");
+            show("To register, enter \"register [yourUsername] pw [password] as [yourRole]\"");
+        } else {
+            show("Enter 'help' to view the format of each command.");
+        }
+
         show(LINE);
     }
 
@@ -160,6 +175,12 @@ public class Ui {
         show(LINE);
     }
 
+    public static void showInvalidScheduleCommandException() {
+        show(LINE);
+        show("Oops, please enter more than one username!");
+        show(LINE);
+    }
+
     public static void showInvalidTimeException() {
         show(LINE);
         show("The time format you entered is not accepted! Please enter again.");
@@ -172,15 +193,21 @@ public class Ui {
         show(LINE);
     }
 
-    public static void showBye() {
+    public static void showCannotScheduleMeetingException() {
         show(LINE);
-        show("Bye, see you next time! :D");
+        show("Oops, no meeting can be scheduled!");
         show(LINE);
     }
 
-    public static void showNoStorage() {
+    public static void showDuplicateMeetingException() {
         show(LINE);
-        show("No storage file detected!");
+        show("You have already scheduled a meeting at that time!");
+        show(LINE);
+    }
+
+    public static void showBye() {
+        show(LINE);
+        show("Bye, see you next time! :D");
         show(LINE);
     }
 
@@ -197,15 +224,12 @@ public class Ui {
     }
 
     private static void show(String printMessage) {
-        if (!isOutputSuppressed) {
-            printStream.println(printMessage);
-        }
+        printStream.println(printMessage);
     }
 
     private static void show(String printMessage, boolean newline) {
-        if (!isOutputSuppressed) {
-            printStream.print(printMessage);
-        }
+        printStream.print(printMessage);
+
         if (newline) {
             printStream.println();
         }
@@ -213,7 +237,7 @@ public class Ui {
 
     public static void printBalanceSheet(ArrayList<Integer> balanceSheet) {
         show(LINE);
-        show("This is the company's current Balance Sheet:");
+        show(FinanceUI.balanceOpening);
         int balance = 0;
         for (int i = 0; i < balanceSheet.size(); i++) {
             if (balanceSheet.get(i) >= 0) {
@@ -224,14 +248,81 @@ public class Ui {
             balance += balanceSheet.get(i);
         }
         show("\n" + "Current balance: " + balance);
+        if (balance != 0) {
+            show(FinanceUI.accountMistake);
+        } else {
+            show(FinanceUI.accountCorrect);
+        }
         show(LINE);
         LOGGER.info("The balance sheet is generated here");
     }
 
-    public static void printAddCommand(int amount, boolean isInflow) {
+    public static void initiateCashFlowStatement() {
+        show(FinanceUI.initiateCashFlow);
+        show(FinanceUI.firstEntryCashFlow);
+    }
+
+    public static void printCashFlowStatement(ArrayList<Integer> cashFlowStatement) {
+        show(LINE);
+        show(FinanceUI.statementDescription);
+        show(FinanceUI.headersUI[0]);
+        int i;
+        for (i = 0; i < cashFlowStatement.size(); i++) {
+            switch (i) {
+            case FinanceManager.endOfOA:
+                show(FinanceUI.cashFlowUI[i] + cashFlowStatement.get(i));
+                show(FinanceUI.netAmountsUI[0] + " " + FinanceManager.netOA);
+                show(FinanceUI.headersUI[1]);
+                break;
+            case FinanceManager.endOfIA:
+                show(FinanceUI.cashFlowUI[i] + cashFlowStatement.get(i));
+                show(FinanceUI.netAmountsUI[1] + " " + FinanceManager.netIA);
+                show(FinanceUI.headersUI[2]);
+                break;
+            default:
+                show(FinanceUI.cashFlowUI[i] + cashFlowStatement.get(i));
+                break;
+            }
+        }
+        if (i == cashFlowStatement.size()) {
+            show(FinanceUI.netAmountsUI[2] + " " + FinanceManager.netFA);
+        }
+        show(LINE);
+    }
+
+    public static void printCashFlowComplete() {
+        show(FinanceUI.cashFlowComplete);
+    }
+
+    public static void printAddBalanceCommand(int amount, boolean isInflow) {
         show(LINE);
         show("Success!");
         show("Amount: " + (isInflow ? "+" : "-") + amount + " has been added to the Balance Sheet.");
+        show(LINE);
+    }
+
+    public static void printAddCashFlowCommand(int amount, boolean isInflow, int cashFlowStage) {
+        show(LINE);
+        show("Success!");
+        show((isInflow ? "+" : "-") + amount + " has been added as " + FinanceUI.cashFlowUI[cashFlowStage]);
+        switch (cashFlowStage) {
+        case FinanceManager.endOfOA:
+            show(FinanceUI.netAmountsUI[0] + " " + FinanceManager.netOA);
+            break;
+        case FinanceManager.endOfIA:
+            show(FinanceUI.netAmountsUI[1] + " " + FinanceManager.netIA);
+            break;
+        case FinanceManager.endOfFA:
+            show(FinanceUI.netAmountsUI[2] + " " + FinanceManager.netFA);
+            break;
+        default:
+            show("\n" + "next, please enter " + FinanceUI.cashFlowUI[cashFlowStage + 1]);
+            break;
+        }
+
+        if (cashFlowStage == 8) {
+            printCashFlowComplete();
+        }
         show(LINE);
     }
 
@@ -242,10 +333,18 @@ public class Ui {
         show(LINE);
     }
 
-    public static void printAvailabilities(TreeMap<LocalTime, ArrayList<String>> meetings) {
-        printMeetingTableHeader();
-        for (LocalTime timing: meetings.keySet()) {
-            Ui.showText("│ " + timing + " │ " + listOfAvailabilities(meetings.get(timing)));
+    public static void printSuccessfulScheduleCommand(String meetingName, String time, ArrayList<String> usernames) {
+        show(LINE);
+        show("Success!");
+        show("You have scheduled a <<" + meetingName + ">> meeting at " + time + " with "
+                + listOfAvailabilities(usernames));
+        show(LINE);
+    }
+
+    public static void printAvailabilities(TreeMap<LocalTime, ArrayList<String>> availability) {
+        printAvailabilityTableHeader();
+        for (LocalTime timing: availability.keySet()) {
+            Ui.showText("│ " + timing + " │ " + listOfAvailabilities(availability.get(timing)));
         }
         show(TABLE_BOT);
         show(LINE);
@@ -255,12 +354,12 @@ public class Ui {
         show(LINE);
         show("Here is the list of forum posts:");
         show(TABLE_TOP);
-        Integer cntPost = 1;
+        int cntPost = 1;
         for (var post : forumPosts) {
-            show("|  " + cntPost.toString() + ". " + post.toString());
-            Integer cntComment = 1;
+            show("|  " + cntPost + ". " + post.toString());
+            int cntComment = 1;
             for (var comment : post.getComments()) {
-                show("|    ∟  " + cntComment.toString() + ". " + comment.toString());
+                show("|    ∟  " + cntComment + ". " + comment.toString());
                 cntComment++;
             }
             cntPost++;
@@ -275,9 +374,9 @@ public class Ui {
         show(TABLE_TOP);
         show("|  " + forumPosts.get(postId).toString());
 
-        Integer cntComment = 1;
+        int cntComment = 1;
         for (var comment : forumPosts.get(postId).getComments()) {
-            show("|    ∟  " + cntComment.toString() + "." + comment.toString());
+            show("|    ∟  " + cntComment + "." + comment.toString());
             cntComment++;
         }
 
@@ -299,7 +398,7 @@ public class Ui {
         return String.valueOf(listOfAvailabilities);
     }
 
-    public static void printMeetingTableHeader() {
+    public static void printAvailabilityTableHeader() {
         show(LINE);
         show("These are the availabilities:");
         show(TABLE_TOP);
@@ -338,6 +437,7 @@ public class Ui {
         show("Here are the commands available to an admin along with their formats:");
         show("add       | add [amount]");
         show("list      | list");
+        show("schedule  | schedule [username1], [username2] at [meetingTime]");
     }
 
     public static void printEmployeeHelp() {
@@ -346,12 +446,13 @@ public class Ui {
     }
 
     public static void printGeneralHelp() {
-        show("available | available [yourUsername] at [availableTime]");
-        show("meetings  | meetings");
-        show("post add  | post add [postContent]");
+        show("post add      | post add [postContent]");
         show("post delete   | post delete [postId]");
         show("post comment  | post comment [commentContent] on [postId]");
         show("post list all | post list all/[postId]");
+        show("available     | available [availableTime]");
+        show("availability  | availability");
+        show("meetings      | meetings");
         show(LINE);
     }
 
@@ -365,17 +466,5 @@ public class Ui {
 
     public static void printInvalidForumDeleteByNonOwnerError() {
         show("You cannot delete a forum post that is not owned by you!.");
-    }
-
-    /**
-     * StorageManager "replays" saved commands to recover internal data structure.
-     * Suppress these outputs during these replays
-     */
-    public static void suppressOutput() {
-        isOutputSuppressed = true;
-    }
-
-    public static void unSuppressOutput() {
-        isOutputSuppressed = false;
     }
 }
