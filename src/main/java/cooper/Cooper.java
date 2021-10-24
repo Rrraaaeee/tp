@@ -95,7 +95,14 @@ class CommandEmulator {
         "login me pw 12345 as admin",
         "add 500",
         "add (1200)",
-        "list"
+        "list",
+        "clear", // special instruction for emulator to clear terminal screen
+        "post add Who wants dinner today at Utown?!",
+        "post add How do I reverse a linked list?",
+        "post add How to make my car go fast?",
+        "post list all",
+        "post comment I want to come!! on 1",
+        "post list all"
     };
     private int counter;
 
@@ -110,16 +117,29 @@ class CommandEmulator {
         try {
             Ui.getInput(); // dummy line to only emulate after "enter"
             String input = commandSequence[counter];
-            for (int i = 0; i < input.length(); i++) {
-                char c = input.charAt(i);
-                System.out.print(c);
-                Thread.sleep(50);
+            if (input.equals("clear")) {
+                // special emulator command
+                clearScreen();
+                counter++;
+                return typeNext();
+            } else {
+                for (int i = 0; i < input.length(); i++) {
+                    char c = input.charAt(i);
+                    System.out.print(c);
+                    Thread.sleep(50); 
+                }
+                System.out.println();
+                counter++;
+                return input;
             }
-            counter++;
-            return input;
         } catch (InterruptedException e) {
             // unforseen interrupt error, return empty string
             return "";
         }
+    }
+
+    private void clearScreen() {
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
     }
 }
