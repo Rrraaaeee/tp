@@ -99,8 +99,16 @@ public class Cooper {
 class CommandEmulator {
     private final String[] commandSequence = {
         "login me pw 12345 as admin",
+        "cf",
         "add 500",
-        "add (1200)",
+        "add 1200",
+        "add 1200",
+        "add 1200",
+        "add 1200",
+        "add 1200",
+        "add 1200",
+        "add 1200",
+        "add 1200",
         "list",
         "clear", // special instruction for emulator to clear terminal screen
         "post add Who wants dinner today at Utown?!",
@@ -121,7 +129,9 @@ class CommandEmulator {
             return "";
         }
         try {
-            Ui.getInput(); // dummy line to only emulate after "enter"
+            // dummy line to only emulate after "enter"
+            Ui.getEnter();
+            Ui.showPrompt();
             String input = commandSequence[counter];
             if (input.equals("clear")) {
                 // special emulator command

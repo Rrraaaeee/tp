@@ -54,7 +54,7 @@ public class AddCommand extends Command {
             balanceSheetStage++;
         } else if (financeFlag == FinanceCommand.CF) {
             financeManager.addCashFlow(amount, isInflow, CashFlow.cashFlowStage);
-            storageManager.saveCashFlowStatement(financeManager.cooperCashFlowStatement);
+            // storageManager.saveCashFlowStatement(financeManager.cooperCashFlowStatement);
             Ui.printAddCashFlowCommand(amount, isInflow, CashFlow.cashFlowStage);
             CashFlow.cashFlowStage++;
         }  
