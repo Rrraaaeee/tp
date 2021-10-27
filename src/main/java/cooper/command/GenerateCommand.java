@@ -37,11 +37,14 @@ public class GenerateCommand extends Command {
                 throw new EmptyFinancialStatementException();
             }
             financeManager.generateBalanceSheetAsPdf();
+
+
         } else if (documentToGenerate.equals("cf")) {
             if (isEmptyCf) {
                 throw new EmptyFinancialStatementException();
             }
             financeManager.generateCashFlowStatementAsPdf();
+
         }
     }
 }

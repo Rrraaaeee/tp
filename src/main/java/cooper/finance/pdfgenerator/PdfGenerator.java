@@ -3,6 +3,7 @@ package cooper.finance.pdfgenerator;
 import cooper.ui.FileIoUi;
 import cooper.util.Util;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -158,6 +159,8 @@ public abstract class PdfGenerator {
             fileOutputStream.write(response);
             fileOutputStream.close();
             FileIoUi.showPdfSuccessfullyGenerated();
+            Desktop.getDesktop().open(new File(GENERATED_FILE_DIR + pdfName));
+
         } catch (IOException e) {
             FileIoUi.showFileCreationError(e);
         }
