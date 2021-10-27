@@ -62,11 +62,14 @@ public class AddCommand extends Command {
                 FinanceUi.showCannotAddToBalanceSheet();
             }
         } else if (financeFlag == FinanceCommand.CF) {
-            financeManager.addCashFlow(amount, isInflow, CashFlow.cashFlowStage);
-            // storageManager.saveCashFlowStatement(financeManager.cooperCashFlowStatement);
-            Ui.printAddCashFlowCommand(amount, isInflow, CashFlow.cashFlowStage);
-            CashFlow.cashFlowStage++;
-        }  
+            if (CashFlow.cashFlowStage <= FinanceManager.freeCashFlow) {
+                financeManager.addCashFlow(amount, isInflow, CashFlow.cashFlowStage);
+                FinanceUi.printAddCashFlowCommand(amount, isInflow, CashFlow.cashFlowStage);
+                CashFlow.cashFlowStage++;
+            } else {
+                FinanceUi.showCannotAddToCashFlow();
+            }
+        }
     }
 }
 
