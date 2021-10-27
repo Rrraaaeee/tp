@@ -4,26 +4,34 @@ import java.lang.Thread;
 import java.util.NoSuchElementException;
 
 import cooper.command.Command;
+import cooper.exceptions.EmptyFinancialStatementException;
 import cooper.exceptions.InvalidAccessException;
 import cooper.exceptions.InvalidCommandFormatException;
 import cooper.exceptions.LogoutException;
 import cooper.log.CooperLogger;
 import cooper.storage.StorageManager;
+import cooper.ui.FinanceUi;
+import cooper.ui.ParserUi;
 import cooper.ui.Ui;
 import cooper.exceptions.UnrecognisedCommandException;
 import cooper.parser.CommandParser;
+import cooper.ui.VerificationUi;
 import cooper.verification.SignInDetails;
 import cooper.verification.Verifier;
 import cooper.resources.ResourcesManager;
 
 public class Cooper {
 
+    private final Verifier cooperVerifier;
     private final ResourcesManager cooperResourcesManager;
     private final CommandEmulator emulator;
+    private final StorageManager cooperStorageManager;
 
     public Cooper() {
+        cooperVerifier = new Verifier();
         cooperResourcesManager = new ResourcesManager();
         emulator = new CommandEmulator();
+        cooperStorageManager = new StorageManager();
         CooperLogger.setupLogger();
     }
 
@@ -35,29 +43,33 @@ public class Cooper {
         cooper.run();
     }
 
-    @SuppressWarnings("InfiniteLoopStatement")
+
     public void run() {
         setUp();
-        while (true) {
-            SignInDetails signInDetails = verifyUser();
-            runLoopUntilExitCommand(signInDetails);
-        }
+        runLoopUntilExitCommand();
     }
 
     private void setUp() {
         Ui.showLogo();
         Ui.showIntroduction();
+
+        // Load data from storage
+        cooperStorageManager.loadAllData(cooperVerifier, cooperResourcesManager.getFinanceManager(),
+                cooperResourcesManager.getMeetingManager());
+    }
+
+    @SuppressWarnings("InfiniteLoopStatement")
+    private void runLoopUntilExitCommand() {
+        while (true) {
+            SignInDetails signInDetails = verifyUser();
+            runLoopUntilLogoutCommand(signInDetails);
+        }
     }
 
     private SignInDetails verifyUser() {
-        Verifier cooperVerifier = cooperResourcesManager.getVerifier();
-        StorageManager cooperStorageManager = cooperResourcesManager.getStorageManager();
-        assert cooperVerifier != null;
-        assert cooperStorageManager != null;
         SignInDetails successfulSignInDetails = null;
-        String input;
         while (!cooperVerifier.isSuccessfullySignedIn()) {
-            input = emulator.typeNext();
+            String input = emulator.typeNext();
             if (input.length() == 0) {
                 input = Ui.getInput();
             }
@@ -68,7 +80,7 @@ public class Cooper {
         return successfulSignInDetails;
     }
 
-    private void runLoopUntilExitCommand(SignInDetails signInDetails) {
+    private void runLoopUntilLogoutCommand(SignInDetails signInDetails) {
         while (true) {
             try {
                 String input = emulator.typeNext();
@@ -77,17 +89,19 @@ public class Cooper {
                 }
                 Command command = CommandParser.parse(input);
                 assert command != null;
-                command.execute(signInDetails, cooperResourcesManager);
+                command.execute(signInDetails, cooperResourcesManager, cooperStorageManager);
             } catch (NoSuchElementException | InvalidCommandFormatException e) {
-                Ui.showInvalidCommandFormatError();
+                ParserUi.showInvalidCommandFormatError();
             } catch (NumberFormatException e) {
-                Ui.showInvalidNumberError();
+                ParserUi.showInvalidNumberError();
             } catch (UnrecognisedCommandException e) {
-                Ui.showUnrecognisedCommandError(false);
+                ParserUi.showUnrecognisedCommandError(false);
             } catch (InvalidAccessException e) {
-                Ui.printNoAccessError();
+                VerificationUi.printNoAccessError();
+            } catch (EmptyFinancialStatementException e) {
+                FinanceUi.showEmptyFinancialStatementException();
             } catch (LogoutException e) {
-                cooperResourcesManager.getVerifier().setSuccessfullySignedIn(false);
+                cooperVerifier.setSuccessfullySignedIn(false);
                 Ui.showLoginRegisterMessage(false);
                 break;
             }

@@ -3,11 +3,10 @@ package cooper.storage;
 import cooper.exceptions.InvalidFileDataException;
 import cooper.meetings.Meeting;
 import cooper.meetings.MeetingManager;
-import cooper.ui.Ui;
+import cooper.ui.FileIoUi;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -31,7 +30,7 @@ public class MeetingsStorage extends Storage {
         try {
             writeMeetings(filePath, cooperMeetingManager.getMeetingsList());
         } catch (IOException e) {
-            Ui.showFileWriteError(e);
+            FileIoUi.showFileWriteError(e);
             System.exit(1);
         }
     }
@@ -43,7 +42,7 @@ public class MeetingsStorage extends Storage {
                 try {
                     decodeMeetings(meetingsRow, meetings);
                 } catch (InvalidFileDataException e) {
-                    Ui.showInvalidFileDataError();
+                    FileIoUi.showInvalidFileDataError(e);
                 }
             }
         }
@@ -53,14 +52,14 @@ public class MeetingsStorage extends Storage {
             throws InvalidFileDataException {
         String[] attendees = meetingAsString.split("\\|");
         if (isInvalidFileData(attendees)) {
-            throw new InvalidFileDataException();
+            throw new InvalidFileDataException("meetings.txt");
         }
         assert !isInvalidFileData(attendees);
 
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
         LocalTime meetingTime = LocalTime.parse(attendees[0].trim(), timeFormat);
 
-        String meetingName = attendees[1];
+        String meetingName = attendees[1].trim();
 
         String[] attendeesAsArray = attendees[2].trim().split(",");
         ArrayList<String> attendeesArrayList = new ArrayList<>(Arrays.asList(attendeesAsArray));
@@ -70,7 +69,7 @@ public class MeetingsStorage extends Storage {
     }
 
     private static boolean isInvalidFileData(String[] meeting) {
-        if (meeting.length != 2) {
+        if (meeting.length != 3) {
             return true;
         }
 
@@ -89,12 +88,12 @@ public class MeetingsStorage extends Storage {
         return false;
     }
 
-    private static void writeMeetings(Path filePath, ArrayList<Meeting> meetingsList)
+    private static void writeMeetings(String filePath, ArrayList<Meeting> meetingsList)
             throws IOException {
-        FileWriter fileWriter = new FileWriter(filePath.toString(), false);
+        FileWriter fileWriter = new FileWriter(filePath, false);
 
-        for (int i = 0; i < meetingsList.size(); i++) {
-            String encodedMeeting = encodeMeeting(meetingsList.get(i));
+        for (Meeting meeting : meetingsList) {
+            String encodedMeeting = encodeMeeting(meeting);
             fileWriter.write(encodedMeeting + System.lineSeparator());
         }
         fileWriter.close();

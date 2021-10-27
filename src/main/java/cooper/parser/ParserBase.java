@@ -1,6 +1,8 @@
 package cooper.parser;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,13 +16,32 @@ import com.dopsun.chatbot.cli.input.TrainingSet;
 import cooper.exceptions.InvalidCommandFormatException;
 import cooper.exceptions.InvalidUserRoleException;
 import cooper.exceptions.UnrecognisedCommandException;
+import cooper.ui.ParserUi;
+import cooper.util.Util;
 
 public abstract class ParserBase {
+
+    protected Parser parser;
 
     /**
      * Constructor. Initialise internal parser.
      */
     public ParserBase() {
+        try {
+            InputStream commandSetInputStream = this.getClass().getResourceAsStream("/parser/command-data.properties");
+
+            File commandSetTmpFile = Util.inputStreamToTmpFile(commandSetInputStream,
+                    System.getProperty("user.dir") + "/tmp", "/tmp_file_command.txt");
+
+            InputStream trainingPathInputStream = this.getClass().getResourceAsStream("/parser/training-data.yml");
+            File trainingTmpFile = Util.inputStreamToTmpFile(trainingPathInputStream,
+                    System.getProperty("user.dir") + "/tmp", "/tmp_file_training.txt");
+
+            parser = prepareParser(commandSetTmpFile.getPath(), trainingTmpFile.getPath());
+
+        } catch (IOException | URISyntaxException e) {
+            ParserUi.showTmpFileCreationError();
+        }
     }
 
     /**
@@ -43,11 +64,6 @@ public abstract class ParserBase {
         ParserBuilder parserBuilder = Parser.newBuilder();
         parserBuilder.addCommandSet(commandSet);
         parserBuilder.addTrainingSet(trainingSet);
-        // parserBuilder.setTracer(System.out::println);
         return parserBuilder.build();
-
     }
-
-
-
 }

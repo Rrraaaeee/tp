@@ -1,9 +1,8 @@
 package cooper.finance;
 
-import cooper.ui.FinanceUI;
-import cooper.ui.Ui;
+import cooper.finance.pdfgenerator.BalanceSheetGenerator;
+import cooper.finance.pdfgenerator.CashFlowStatementGenerator;
 
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -19,10 +18,21 @@ public class FinanceManager {
     public static int netOA = 0;
     public static int netIA = 0;
     public static int netFA = 0;
+    public static final int endOfAssets = 5;
+    public static final int endOfLiabilities = 9;
+    public static final int endOfSE = 11;
+    public static int netAssets = 0;
+    public static int netLiabilities = 0;
+    public static int netSE = 0;
+
+    private final BalanceSheetGenerator balanceSheetGenerator;
+    private final CashFlowStatementGenerator cashFlowStatementGenerator;
 
     public FinanceManager() {
         this.cooperBalanceSheet = new BalanceSheet();
         this.cooperCashFlowStatement = new CashFlow();
+        this.balanceSheetGenerator = new BalanceSheetGenerator();
+        this.cashFlowStatementGenerator = new CashFlowStatementGenerator();
     }
 
     /**
@@ -30,16 +40,24 @@ public class FinanceManager {
      * @param amount amount inout by user
      * @param isInflow boolean which specifies if {@code amount} is inflow or outflow
      */
-    public void addBalance(int amount, boolean isInflow) {
+    public void addBalance(int amount, boolean isInflow, int balanceSheetStage) {
         int signedAmount = amount;
         if (isInflow) {
-            cooperBalanceSheet.balanceSheet.add(signedAmount);
             assert amount >= 0 : "entry should be positive";
         } else {
             signedAmount *= -1;
-            cooperBalanceSheet.balanceSheet.add(signedAmount);
             assert amount * -1 < 0 : "entry should be negative";
         }
+
+        cooperBalanceSheet.getBalanceSheet().set(balanceSheetStage, signedAmount);
+        if (balanceSheetStage <= endOfAssets) {
+            netAssets += signedAmount;
+        } else if (balanceSheetStage <= endOfLiabilities) {
+            netLiabilities += signedAmount;
+        } else if (balanceSheetStage <= endOfSE) {
+            netSE += signedAmount;
+        }
+
         LOGGER.info("An entry to the balance sheet is created: " + amount);
     }
 
@@ -51,7 +69,7 @@ public class FinanceManager {
             signedAmount *= -1;
             assert amount * -1 < 0 : "entry should be negative";
         }
-        cooperCashFlowStatement.getCashFlowStatement().add(signedAmount);
+        cooperCashFlowStatement.getCashFlowStatement().set(cashFlowStage, signedAmount);
         if (cashFlowStage <= endOfOA) {
             netOA += signedAmount;
         } else if (cashFlowStage <= endOfIA) {
@@ -60,5 +78,21 @@ public class FinanceManager {
             netFA += signedAmount;
         }
         LOGGER.info("An entry to the cash flow statement is created: " + amount);
+    }
+
+    public void generateBalanceSheetAsPdf() {
+        balanceSheetGenerator.addAssets(cooperBalanceSheet);
+        balanceSheetGenerator.addLiabilities(cooperBalanceSheet);
+        balanceSheetGenerator.addShareholderEquity(cooperBalanceSheet);
+        balanceSheetGenerator.addBalance();
+        balanceSheetGenerator.compilePdfAndSend();
+    }
+
+    public void generateCashFlowStatementAsPdf() {
+        cashFlowStatementGenerator.addCfFromOperatingActivities(cooperCashFlowStatement);
+        cashFlowStatementGenerator.addCfFromInvestingActivities(cooperCashFlowStatement);
+        cashFlowStatementGenerator.addCfFromFinancingActivities(cooperCashFlowStatement);
+
+        cashFlowStatementGenerator.compilePdfAndSend();
     }
 }
