@@ -114,18 +114,21 @@ public class Cooper {
 
 class CommandEmulator {
     private final String[] commandSequence = {
-        "login me pw 12345 as admin",
+        // "register shixi pw ******** as admin",
+        "login shixi pw ******** as admin",
         "cf",
         "add 500",
+        "add 120",
+        "add 170",
+        "add 325",
+        "add 2400",
         "add 1200",
-        "add 1200",
-        "add 1200",
-        "add 1200",
-        "add 1200",
-        "add 1200",
-        "add 1200",
-        "add 1200",
+        "add 35",
+        "add 1300",
+        "add 2987",
         "list",
+        "generate cf"
+        /*
         "clear", // special instruction for emulator to clear terminal screen
         "post add Who wants dinner today at Utown?!",
         "post add How do I reverse a linked list?",
@@ -133,6 +136,7 @@ class CommandEmulator {
         "post list all",
         "post comment I want to come!! on 1",
         "post list all"
+        */
     };
     private int counter;
 
@@ -174,4 +178,5 @@ class CommandEmulator {
         System.out.print("\033[H\033[2J");
         System.out.flush();
     }
+
 }
