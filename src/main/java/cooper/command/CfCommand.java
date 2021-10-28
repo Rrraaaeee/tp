@@ -35,5 +35,8 @@ public class CfCommand extends Command {
 
     private void resetCashFlowStatement(FinanceManager financeManager) {
         CashFlow.cashFlowStage = 0;
+        FinanceManager.netOA = 0;
+        FinanceManager.netIA = 0;
+        FinanceManager.netFA = 0;
     }
 }

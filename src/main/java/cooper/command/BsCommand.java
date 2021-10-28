@@ -35,5 +35,8 @@ public class BsCommand extends Command {
 
     private void resetBalanceSheet(FinanceManager financeManager) {
         BalanceSheet.balanceSheetStage = 0;
+        FinanceManager.netAssets = 0;
+        FinanceManager.netLiabilities = 0;
+        FinanceManager.netSE = 0;
     }
 }
